@@ -20,14 +20,14 @@ void matflip2cpu(double* m, double* res);
 
 int main()
 {
-    //ShowWindow(GetConsoleWindow(), SW_HIDE);
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
 
 	double r = 1;
 	double bigr = 4;
 
 	double roomsize = 10;
 	double schecker = 1;
-	double dist = 1;
+	double dist = 2.0;
 	double sqsz = 0.01 / 4;
 	double speed = 0.01;
 	double alpha = 1;
@@ -54,8 +54,8 @@ int main()
     double x00=1, x01=0, x02=0;
     double x10=0, x11=1, x12=0;
     double x20=0, x21=0, x22=1;
-    double multy = (1 - 1280) * sqsz / 2;
-    double multz = (720-1) * sqsz / 2;
+    double multy = (1 - 1920) * sqsz / 2;
+    double multz = (1080-1) * sqsz / 2;
 
 
     double newx00, newx01, newx02;
@@ -69,6 +69,8 @@ int main()
 	double kappa;
 	double guder;
 	double distrem;
+
+	double alpha2 = 1.0;
 
 	double proj0, proj1;
 
@@ -84,20 +86,21 @@ int main()
 
     bool focus = true;
 
-    sf::RenderWindow window(sf::VideoMode(1280, 720, 32), "Wormhole Simulator - Press ESC to stop", sf::Style::Titlebar | sf::Style::Close);
-    sf::Texture texture;
+   // sf::RenderWindow window(sf::VideoMode(1920, 1080, 32), "Torus Black Hole - Press ESC to stop", sf::Style::Titlebar | sf::Style::Close);
+	sf::RenderWindow window(sf::VideoMode(1920, 1080, 32), "Torus Black Hole - Press ESC to stop", sf::Style::Fullscreen);
+	sf::Texture texture;
     sf::Sprite sprite;
-    sf::Uint8* pixels = new sf::Uint8[1280 * 720 * 4];
+    sf::Uint8* pixels = new sf::Uint8[1920 * 1080 * 4];
     sf::Vector2i winpos;
 
     cudaInit();
-    texture.create(1280, 720);
+    texture.create(1920, 1080);
     window.setMouseCursorVisible(false);
 
-	pos0 = -7; pos1 = 0.001; pos2 = 0;
+	pos0 = -7.31; pos1 = 0.001; pos2 = 0.07;
 
     winpos = window.getPosition();
-    SetCursorPos(winpos.x + 1280 / 2, winpos.y + 720 / 2);
+    SetCursorPos(winpos.x + 1920 / 2, winpos.y + 1080 / 2);
    
     while (window.isOpen())
     {
@@ -106,7 +109,7 @@ int main()
 		
 		while (window.pollEvent(event))
 		{
-			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::J) other = !other;
+			if (focus && event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::J) other = !other;
 
 			if (event.type == sf::Event::Closed)
 				window.close();
@@ -116,8 +119,8 @@ int main()
 				POINT p;
 				GetCursorPos(&p);
 				winpos = window.getPosition();
-				centralx = winpos.x + 1280 / 2;
-				centraly = winpos.y + 720 / 2;
+				centralx = winpos.x + 1920 / 2;
+				centraly = winpos.y + 1080 / 2;
 				SetCursorPos(centralx, centraly);
 
 				mousx = p.x - centralx;
@@ -206,32 +209,35 @@ int main()
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
 		{
-			x00 = 1; x01 = 0; x02 = 0;
-			x10 = 0; x11 = 1; x12 = 0;
-			x20 = 0; x21 = 0; x22 = 1;
-			pos0 = -7; pos1 = 0.001; pos2 = 0;
+			x00 = 0.0; x01 = 0.0; x02 = -1.0;
+			x10 = 0.0; x11 = 1.0; x12 = 0.0;
+			x20 = 1.0; x21 = 0.0; x22 = 0.0;
+			pos0 = 0.003; pos1 = 0.07; pos2 = 7.93;
 			inside = false;
-			alpha = 1;
-			bigr = 4;
-			r = 1;
+			alpha2 = 1.0;
+			bigr = 4.0;
+			r = 2.0;
+			alpha = alpha2*r;
+			speed = 0.01;
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) bigr += 0.003;
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::X)) bigr -= 0.003;
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::C)) r += 0.003;
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::V)) r -= 0.003;
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::B)) alpha += 0.003;
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::N)) alpha -= 0.003;
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::C)) { r += 0.003;  alpha = alpha2 * r;}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::V)) { r -= 0.003;  alpha = alpha2 * r;}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::B)) { alpha2 += 0.003; alpha = alpha2 * r; }
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::N)) { alpha2 -= 0.003;  alpha = alpha2 * r;}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::K)) speed += 0.0001;
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::L)) speed -= 0.0001;
-		//if (sf::Keyboard::isKeyPressed(sf::Keyboard::J)) other = !other;
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::L)) if(speed-0.0001>0) speed -= 0.0001;
 		
-
+		/*
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
             {
                 focus = false;
                 window.setMouseCursorVisible(true);
-            }
+            }*/
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) window.close();
+
 
             if(sf::Mouse::isButtonPressed(sf::Mouse::Left))
             {
@@ -307,7 +313,7 @@ int main()
 								//pos0 = fmod(pos0, 2.0 * M_PI * (bigr + r)); //remove?
 								//pos1 = fmod(pos1, 2.0 * M_PI * r);
 
-								pos0 /= bigr + r;
+								pos0 /= bigr;
 								pos1 /= r;
 
 								npos[0] = sin(pos0) * (bigr + r * cos(pos1));
@@ -366,7 +372,7 @@ int main()
 						matact2(mat1, x20, x21, x22, nvecn);
 						x20 = nvecn[0]; x21 = nvecn[1]; x22 = nvecn[2];
 
-						pos0 = phi * (bigr + r);
+						pos0 = phi * (bigr);
 						pos1 = theta * r;
 						pos2 = alpha;
 
@@ -510,7 +516,7 @@ int main()
 						//pos0 = fmod(pos0, 2.0 * M_PI * (bigr + r)); //remove?
 						//pos1 = fmod(pos1, 2.0 * M_PI * r);
 
-						pos0 /= bigr + r;
+						pos0 /= bigr;
 						pos1 /= r;
 
 						npos[0] = sin(pos0) * (bigr + r * cos(pos1));
@@ -569,7 +575,7 @@ int main()
 						matact2(mat1, x20, x21, x22, nvecn);
 						x20 = nvecn[0]; x21 = nvecn[1]; x22 = nvecn[2];
 
-						pos0 = phi * (bigr + r);
+						pos0 = phi * (bigr);
 						pos1 = theta * r;
 						pos2 = alpha;
 
@@ -729,7 +735,7 @@ int main()
 						//pos0 = fmod(pos0, 2.0 * M_PI * (bigr + r)); //remove?
 						//pos1 = fmod(pos1, 2.0 * M_PI * r);
 
-						pos0 /= bigr + r;
+						pos0 /= bigr;
 						pos1 /= r;
 
 						npos[0] = sin(pos0) * (bigr + r * cos(pos1));
@@ -788,7 +794,7 @@ int main()
 						matact2(mat1, x20, x21, x22, nvecn);
 						x20 = nvecn[0]; x21 = nvecn[1]; x22 = nvecn[2];
 
-						pos0 = phi * (bigr + r);
+						pos0 = phi * (bigr);
 						pos1 = theta * r;
 						pos2 = alpha;
 
@@ -941,7 +947,7 @@ int main()
 						//pos0 = fmod(pos0, 2.0 * M_PI * (bigr + r)); //remove?
 						//pos1 = fmod(pos1, 2.0 * M_PI * r);
 
-						pos0 /= bigr + r;
+						pos0 /= bigr;
 						pos1 /= r;
 
 						npos[0] = sin(pos0) * (bigr + r * cos(pos1));
@@ -1000,7 +1006,7 @@ int main()
 						matact2(mat1, x20, x21, x22, nvecn);
 						x20 = nvecn[0]; x21 = nvecn[1]; x22 = nvecn[2];
 
-						pos0 = phi * (bigr + r);
+						pos0 = phi * (bigr);
 						pos1 = theta * r;
 						pos2 = alpha;
 

@@ -224,7 +224,7 @@ __global__ void setstars(uint8_t* stars)
 
 	for (i = 0; i < 10; i++) rand = (60493 * rand + 11) % 115249;
 
-	if ((rand) % 10 == 0)
+	if ((rand) % 5 == 0)
 	{
 		stars[tmp] = 255 * rand / 115249;
 	}
@@ -274,8 +274,8 @@ __global__ void addKernel(uint8_t* buffer, double* vecl, double pos0,double pos1
 
 	int tmp2;
 	int tmp = blockIdx.x * blockDim.x + threadIdx.x;
-	int tmpx = tmp % 1280;
-	int tmpy = (tmp-tmpx) /1280;
+	int tmpx = tmp % 1920;
+	int tmpy = (tmp-tmpx) /1920;
 
 	double mat1[9]{};
 
@@ -302,9 +302,8 @@ __global__ void addKernel(uint8_t* buffer, double* vecl, double pos0,double pos1
 
 		//pos0 = fmod(pos0, 2.0 * M_PI * (bigr + r));
 		//pos1 = fmod(pos1, 2.0 * M_PI * r);
-		//pos2 = r * sin(leangle);
 
-		pos0 /= bigr + r;
+		pos0 /= bigr;
 		pos1 /= r;
 
 		vecn0 = sqrt(1 - (exit * exit) / (rayon * rayon)) * vecn0 / vl;
@@ -352,7 +351,7 @@ __global__ void addKernel(uint8_t* buffer, double* vecl, double pos0,double pos1
 			matflip(inv, mat1);
 			matact(mat1, vecn0, vecn1, vecn2, nvecn);
 
-			npos[0] = phi * (bigr+r);
+			npos[0] = phi * (bigr);
 			npos[1] = theta * r;
 			npos[2] = alpha;
 
@@ -368,7 +367,7 @@ __global__ void addKernel(uint8_t* buffer, double* vecl, double pos0,double pos1
 			//npos[0] = fmod(npos[0], 2.0 * M_PI * (bigr+r));
 			//npos[1] = fmod(npos[1], 2.0 * M_PI * r);
 
-			npos[0] /= bigr+r;
+			npos[0] /= bigr;
 			npos[1] /= r;
 
 			nvecn[2] *= -1.0;
@@ -419,13 +418,13 @@ __global__ void addKernel(uint8_t* buffer, double* vecl, double pos0,double pos1
 		{
 			buffer[4 * tmp] = 0;
 			buffer[4 * tmp + 1] = 0;
-			buffer[4 * tmp + 2] = (uv * uv * uv * uv) / (2.0*255.0 * 255.0 * 255.0);
+			buffer[4 * tmp + 2] = (uv * uv * uv * uv) / (255.0 * 255.0 * 255.0);
 		}
 		else
 		{
-			buffer[4 * tmp] = (uv*uv*uv*uv) / (255.0*255.0 * 255.0);
-			buffer[4 * tmp + 1] = (uv*uv*uv*uv) / (255.0 * 255.0 * 255.0);
-			buffer[4 * tmp + 2] = (uv*uv*uv*uv)/(255.0 * 255.0 * 255.0);
+			buffer[4 * tmp] = (uv*uv*uv) / ( 255.0*255.0);
+			buffer[4 * tmp + 1] = (uv*uv*uv) / ( 255.0* 255.0);
+			buffer[4 * tmp + 2] = (uv*uv*uv)/( 255.0* 255.0 );
 		}
 	}
 	else
@@ -677,10 +676,10 @@ __global__ void addKernel(uint8_t* buffer, double* vecl, double pos0,double pos1
 
 void cudaInit()
 {
-	double dist = 1;
+	double dist = 2.0;
 	double sqsz = 0.01 / 4;
 	int tmpx, tmpy;
-	double* vecltmp = new double[1280 * 720];
+	double* vecltmp = new double[1920 * 1080];
 
 	double vec0, vec1, vec2;
 	double addy0, addy1, addy2;
@@ -689,12 +688,12 @@ void cudaInit()
 	double x00 = 1, x01 = 0, x02 = 0;
 	double x10 = 0, x11 = 1, x12 = 0;
 	double x20 = 0, x21 = 0, x22 = 1;
-	double multy = (1 - 1280) * sqsz / 2;
-	double multz = (720 - 1) * sqsz / 2;
+	double multy = (1 - 1920) * sqsz / 2;
+	double multz = (1080 - 1) * sqsz / 2;
 
 	cudaSetDevice(0);
-	cudaMalloc((void**)&buffer, 4 * 1280 * 720 * sizeof(uint8_t));
-	cudaMalloc((void**)&vecl, 1280 * 720 * sizeof(double));
+	cudaMalloc((void**)&buffer, 4 * 1920 * 1080 * sizeof(uint8_t));
+	cudaMalloc((void**)&vecl, 1920 * 1080 * sizeof(double));
 	cudaMalloc((void**)&stars, starsize * starsize * sizeof(uint8_t));
 	
 	vec0 = dist * x00 + multy * x10 + multz * x20;
@@ -709,10 +708,10 @@ void cudaInit()
 	addz1 = -sqsz * x21;
 	addz2 = -sqsz * x22;
 	
-	for (int i = 0; i < 1280 * 720; i++)
+	for (int i = 0; i < 1920 * 1080; i++)
 	{
-		tmpx = i % 1280;
-		tmpy = (i - tmpx) / 1280;
+		tmpx = i % 1920;
+		tmpy = (i - tmpx) / 1920;
 
 		vecn0 = vec0 + tmpx * addy0 + tmpy * addz0;
 		vecn1 = vec1 + tmpx * addy1 + tmpy * addz1;
@@ -721,9 +720,9 @@ void cudaInit()
 		vecltmp[i] = sqrt(vecn0*vecn0+vecn1*vecn1+vecn2*vecn2);
 	}
 
-	cudaMemcpy(vecl, vecltmp, 1280 * 720 * sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(vecl, vecltmp, 1920 * 1080 * sizeof(double), cudaMemcpyHostToDevice);
 
-	bufferinit << <(int)(1280 * 720 / 600), 600 >> > (buffer);
+	bufferinit << <(int)(1920 * 1080 / 600), 600 >> > (buffer);
 	cudaDeviceSynchronize();
 
 	setstars << <starsize * starsize / 500, 500 >> > (stars);
@@ -739,8 +738,8 @@ void cudaExit()
 
 void cudathingy(uint8_t* pixels, double pos0, double pos1, double pos2, double vec0, double vec1, double vec2, double addy0, double addy1, double addy2, double addz0, double addz1, double addz2, bool inside, double alpha, double bigr, double r, bool other)
 {
-	addKernel <<<(int)(1280 * 720 / 600), 600>>>(buffer, vecl, pos0,pos1,pos2,vec0,vec1,vec2,addy0,addy1,addy2,addz0,addz1,addz2,inside,alpha, bigr,  r,other,stars);
+	addKernel <<<(int)(1920 * 1080 / 600), 600>>>(buffer, vecl, pos0,pos1,pos2,vec0,vec1,vec2,addy0,addy1,addy2,addz0,addz1,addz2,inside,alpha, bigr,  r,other,stars);
 
 	cudaDeviceSynchronize();
-	cudaMemcpy(pixels, buffer, 4 * 1280 * 720 * sizeof(uint8_t), cudaMemcpyDeviceToHost);
+	cudaMemcpy(pixels, buffer, 4 * 1920 * 1080 * sizeof(uint8_t), cudaMemcpyDeviceToHost);
 }
