@@ -1,5 +1,5 @@
 # torusblackhole
-Torus Black Hole
+Black hole with the shape of a torus
 
 # Video
 [https://www.youtube.com/watch?v=EQPWIU9JQAY](https://www.youtube.com/watch?v=EQPWIU9JQAY)
@@ -29,6 +29,10 @@ n: decrease height of half-plane model
 
 j: switch texture
 
+k: increase speed
+
+l: decrease speed
+
 p: reset
 
 # Requirements
@@ -38,3 +42,6 @@ p: reset
 
 # Explanation
 https://en.wikipedia.org/wiki/Poincar%C3%A9_half-plane_model
+
+# Picture
+![torus black hole](https://github.com/falkush/torusblackhole/blob/main/torusblackhole.png?raw=true)
